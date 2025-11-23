@@ -1,0 +1,2633 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, 
+    viewport-fit=cover">
+  <meta name="screen-orientation" content="portrait">
+  <style>
+    @media screen and (orientation: landscape) {
+        body:before {
+            content: "ROTATE TO PORTRAIT";
+            position: fixed; inset: 0;
+            background: #000; color:#666; font-size: 40px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99999; font-family: monospace; letter-spacing: 3px;
+        }
+
+        /* Nascondi tutto il DRO finchè non ruota */
+        body > *:not(script):not(style) { visibility: hidden; }
+    }
+
+    /* Nascondi scrollbar, specialmente nel drawer */
+    ::-webkit-scrollbar { width: 0px; height: 0px; }
+    
+    @font-face {
+      font-family: 'DS-Digital'; src: url('/font.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    
+    :root {
+      --bg:        #0b0b0b;  
+      --card:      #1a1a1a; 
+      --primary:   #00ff48; 
+      --secondary: #33ff7e; 
+      --flash:     #ff5500; 
+      --pulse:     #cf35ab;
+
+      --drawer-width: 600px;
+      --listbox-color: #9fa103; /*#b1b402*/
+    }
+
+    *, *::before, *::after { 
+        box-sizing: border-box; margin: 0; padding: 0; 
+        font-family: monospace; 
+        user-select: none;
+    }
+
+    body {
+        background: var(--bg); color: var(--secondary);
+        overscroll-behavior: none;
+        touch-action: manipulation;
+        overflow: hidden;
+        overflow-x: hidden;
+        -webkit-tap-hightlight-color: rgba(0,0,0,0);
+        -webkit-touch-callout: none;
+        user-select: none;
+
+        zoom: 80%;
+    }
+
+    /* temi */
+    body.purple {
+        --primary:  #9807f8; 
+        --secondary:    #ad3ef7; 
+    }
+
+    body.orange {
+        --primary:  #ff8c00;
+        --secondary:    #ffaa33;
+    }
+
+     body.crimson {
+        --primary:  crimson;
+        --secondary:    rgb(238, 53, 90);
+    }
+
+    body.tomato {
+        --primary: tomato;
+        --secondary: rgb(211, 107, 89);
+    }
+
+    body.carrot {
+        --primary:  #b81d1d; 
+        --secondary:    #b92d2d; 
+    }
+
+    body.snow {
+        --primary: rgb(178, 211, 224);
+        --secondary: rgb(209, 233, 243);
+    }
+
+    body.limon {
+        --primary: #ccff00;
+        --secondary: #aaff00;
+    }
+
+    body.pink {
+        --primary: #e83e8c;
+        --secondary: #e05a99;
+    }
+
+    body.redalert {
+        --primary: #ff0033;
+        --secondary: #ff3366;
+    }
+
+    body.tron {
+        --primary: #00d0ff;
+        --secondary: #ff6a00;
+    }
+
+    body.teal {
+        --primary: #20c997;
+        --secondary: #56d6b0;
+    }
+
+    body.masso {
+        --primary: #00ff41;
+        --secondary: #00ff41aa;
+        /*--secondary:    #33ff7e; */
+    }
+
+    body.halloween {
+        --primary: #ec3b05;
+        --secondary: #f84e1b;
+    }
+    
+    .appDroTitle {
+      font-size:5.5vw; text-align:center; letter-spacing:0.6vw;
+      text-shadow:0 0 12px var(--secondary);
+    }
+
+    /* Toolbar */
+    .top-buttons {
+        position: fixed;
+        top: 0vh;
+        left: 0vw;
+        right: 0vw;
+        display: flex;
+        padding: 8px 16px;
+        gap: 0vw;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 999;
+    }
+
+    /* Statusbar */
+    .bottom-buttons {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 16px;
+        z-index: 999;
+    }
+
+    /* Bottone schermo intero */
+    .fullscreen-button {
+        background: none;
+        border: none;
+    }
+
+    .fullscreen-button::before {
+        content: "\26F6";
+        font-size: 5vw;
+        color: rgb(55, 53, 53);
+    }
+    
+    /* Layout della intera pagina dove si appoggia tutto */
+    .layout-page {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 100%;
+        overflow-x: auto;
+        margin-top: 90px; 
+    }
+
+
+    /* Scheda asse */
+    .card {
+      position: relative; 
+      background: var(--card);
+      border: 2px solid var(--primary);
+      border-radius: 16px;
+      padding: 3vh 4vw;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(255,140,0,0.3);
+      margin-top: 12vh;  /* 2vh con asse Y */
+      flex-shrink: 1;
+    }
+
+     /* Font quota asse */
+    .digital-value {
+      font-size: 7vw; letter-spacing: 0.5vw;
+      text-shadow: 0 0 15px var(--secondary), 0 0 30px var(--primary);
+      margin-bottom: 1vh;
+      transition: all 0.3s ease;
+      font-weight: 100;
+      transform: scaleX(0.95);
+      font-family: 'DS-Digital', monospace; 
+    }
+
+     @keyframes glowPulse {
+        0%, 100% { box-shadow: 0 0 15px var(--pulse); }
+        50%      { box-shadow: 0 0 30px var(--pulse); }
+    }
+    .zero-flash { color:#ff5500 !important; text-shadow:0 0 40px #ff5500 !important; transform:scale(1.12); }
+
+    /* Indicatore un giro completo encoder */
+    .progressbar {
+      height: 2.8vh; background: #000; border: 1px solid var(--primary);
+      border-radius: 0px; overflow: hidden; margin: 1.5vh 0;
+      box-shadow: inset 0 0 8px #000;
+      display: flex;
+      align-items: center;
+    }
+    
+    /* Colore avanzamento indicatore */
+    .fill {
+      height: 100%; width: 0%; background: var(--primary);
+      box-shadow: 0 0 15px var(--secondary);
+      transition: width 0.4s ease;
+    }
+
+    /* Testo nome asse nella card */
+    .label {
+      font-size: 3.8vw; 
+      color: var(--secondary); 
+      letter-spacing: 0.4vw;
+    }
+
+    /* Toggle switch ABS/INC */
+    .mode-toggle {
+        padding: 6px 16px;
+        font-size: 22px;
+        border: 2px solid #ccc;
+        border-radius: 10px;
+        background-color: #000000; /*#cf35ab*/
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .mode-toggle:active {
+        transform: scale(0.95);
+    }
+
+    .mode-label {
+        padding: 8px 16px;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+
+    #modeZ .mode-label.active,
+    #modeX .mode-label.active {
+        background-color: #f02185; /*#007bff*/
+        color: white !important;
+        font-weight: bold;
+        border: 2px solid #f02185;
+        box-shadow: 0 0 15px rgba(240, 33, 133, 0.6);
+        animation: glowPulse 1.2s infinite;
+    }
+    
+    .mode-label.inactive {
+        color: #555 !important;
+        background-color: transparent;
+        border: 2px solid transparent;
+    }
+
+    /* Precisione decimali */
+    #precisionZ .mode-label.active,
+    #precisionX .mode-label.active {
+        background-color: transparent;
+        color: #f02185 !important;
+        border: 2px solid #f02185;
+        font-weight: bold;
+        box-shadow: 0 0 15px rgba(240, 33, 133, 0.4);
+        animation: glowPulse 1.2s infinite;
+    }
+
+    /* Contenitori bottini (abs/inc precisione, set, zero ...) */
+    .button-container {
+        margin-top: 0vh; /* era 2vh */
+        display: flex;
+        justify-content: flex-start;
+        gap: 2vw;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    /* Bottone set, zero, ok, annulla ... */
+    .action-button {
+        padding: 15px 25px;
+        border-radius: 10px;
+        font-size: 22px;
+        font-weight: bold;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        transition: all 0.2s ease;
+    }
+
+    .action-button:active {
+        background-color: #005bb5;
+        transform: scale(0.96);
+    }
+
+    .action-label.active {
+        animation: glowPulse 1.2s infinite;
+    }
+
+    /* Avvertimento colore background */
+    .input-warning {
+        background-color: #007bff !important;
+        transition: background-color 0.3s ease;
+    }
+
+    #keypadQuotaAsse, #keypadForSetup {
+        display: none; position: fixed; top: 0; left:0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.97); z-index:999; padding:8vh 5vw;
+        color: #fff;
+        backdrop-filter: blur(4px);
+        overflow: auto;
+
+        /* Forza su GPU */
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        will-change: filter, transform;
+    }
+
+    #keypadQuotaAsse input, #keypadForSetup input {
+        width: 100%; padding: 3vh; font-size: 8vw; text-align: center;
+        border-radius: 12px; margin-bottom: 4vh; background: #000; color: #6f6c6c;
+        border: 3px solid #007bff;
+        letter-spacing: 0.2em;
+    }
+
+    /* Bottone pad impostazione */
+    .settings-pad {
+        background-color: var(--card); border: 2px solid #007bff; border-radius: 12px;
+        height: 452px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        box-sizing: border-box;
+        padding: 1vh 4vw;
+        font-size: 3vw;
+        color: #888;
+        box-shadow: 0 0 55px rgba(255, 170, 51, 0.3);
+        transition: all 0.2s ease;
+        white-space: pre-line; /* OBBLIGATORIO PER \n */
+    }
+
+    .hidden { display: none; }
+
+    .settings-pad:active { 
+        transform: scale(0.97); 
+        background-color: #111; 
+        box-shadow: 0 0 35px var(--pulse); 
+    }
+    
+    .settings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 3vw;
+        margin-bottom: 3vh;
+        color: #888;
+        gap: 2vw;
+    }
+
+    .settings-header span {
+        white-space: nowrap;
+    }
+
+    /* Finestra impostazioni per i pads e lo scrolling attivo */
+    #finestraSetup {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #0b0b0b;
+        z-index: 999;
+        padding: 6vh 5vw;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+        padding-bottom: 10vh;
+        display: none;
+    }
+
+    body.settings-open #finestraSetup {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body.settings-open { overflow: hidden; }
+
+    body.blur-active {
+        filter: blur(8px) brightness(0.4);
+        transition: filter 0.6 ease;
+        pointer-events: none;
+
+        /* Forza su GPU */
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        will-change: filter, transform;
+    }
+
+    /* Bottone nella scheda asse per aprire le impostazioni */
+    .openCard-button {
+        position: absolute;
+        top: 1px; right: 20px;
+        background: none; border: none; padding: 0; margin: 0; outline: none;
+        transition: transform 0.2s ease;
+
+        animation: blink 1s infinite;
+    }
+
+    .openCard-button::before {
+        content: "\0021"; /* 2026 */
+        font-size: 7vw;
+        color: var(--primary);
+    }
+
+    .no-copy { user-select: none ;}
+
+    /* ##################################### Menu laterale  ##################################### */
+    .openMenu-button {
+        background: none;
+        border: none;
+    }
+
+    .openMenu-button::before {
+        content: "\2630  Menu";
+        font-size: 5vw;
+        font-weight: 100;
+        color: rgb(55, 53, 53);
+    }
+
+
+    /* Overlay trasparente di appoggio prima di aprire il drawer. 
+       Copre l'intera pagina e serve per chiudere il drawer 
+       quando si preme su qualsiasi punto sullo schermo. Fa da 
+       schermo sopra i elementi sulla pagina che non devono essere 
+       premuti. aka trucchetto */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgb(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease;
+        z-index: 1000;
+        backdrop-filter: blur(5px);
+
+        /* Forza su GPU */
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        will-change: filter, transform;
+    }
+
+    .overlay.open { opacity: 1; visibility: visible; }
+
+    /* Menu laterale */
+    .drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: var(--drawer-width);
+        height: 125dvh; /* 100 era, Importante dvh */
+        background: rgb(71, 64, 64);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1001;
+        overflow-x: hidden;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+    }
+
+    /* <a href */
+    .drawer-content a:hover {
+        background: #007bff;
+    }
+
+    .drawer.open {
+        transform: translateX(0);
+    }
+
+    /* La parte superiore con logo */
+    .drawer-header { 
+        position: relative;
+        background: #000;
+        width: 100%; 
+        height: 155px;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    .drawer-header .logo {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        width: auto; 
+        height: 100%; 
+    }
+
+    .drawer-header .version {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #fff;
+        font-size: 1.2rem;
+        margin: 0;
+    }
+
+    /* <h1></h1> */
+    .drawer-header h1 {
+        color: #ccc;
+        font-size: 4.0em;
+        margin: 0;
+    }
+
+    /* <p></p> */
+    .drawer-header p {
+        color: #ccc;
+        font-size: 1.2em;
+        margin: 4px 0 0;
+    }
+
+    /* Un contenitore a colonne per elementi */
+    .drawer-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        gap: 12px;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    /* Aggiunge un margine di spazio sotto l'ultimo elemento 
+       inserito nel drawer. Serve per migliorare la visibilità 
+       a fine scrolling 
+     */
+    .drawer-content > :last-child {
+        padding-bottom: 148px;
+    }
+
+    /* <a></a> */
+    .drawer-content a {
+        text-decoration: none;
+        color: white;
+        font-size: 20px;
+        padding: 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+
+    /* <label></label> */
+    .drawer-content label {
+        display: block;
+        align-items: center;
+        color: var(--card);
+        gap: 8px;
+        font-size: 20px;
+        margin-bottom: 9px;
+    }
+    
+    /* Linea divisore menu */
+    .divider {
+        height: 1px;
+        background: var(--card);
+        border: none;
+        margin: 20px 0;
+        opacity: 0.6;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .selection-title {
+        margin: 24px 0 16px 0;
+    }
+
+    /* <span></span> */
+    .section-title span {
+        display: block;
+        font-size: 24px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--card);
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+    }
+
+    .section-title .divider {
+        height: 2px;
+        background: var(--card);
+        border: none;
+        margin: 0;
+        opacity: 0.6;
+    }
+
+    /* Listbox con menu a tendina */
+    .dropdown {
+        position: relative;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+
+    /* Pulsante che apre/chiude la listbox */
+    .dd-toggle {
+        width: 100%;
+        padding: 8px;
+        /*border: 1px solid #ccc; #4e4848; */
+        border-radius: 0;
+        background: var(--card);
+        text-align: left;
+        font-size: 20px;
+        color: white;
+        cursor: pointer;
+        outline: none;
+        border: none;
+    }
+
+
+    /* Listbox menu elementi */
+    .dd-menu {
+        position: absolute;
+        left: 0;
+        right: 0;
+        margin-top: 4px;
+        border: 1px solid #383636;
+        border-radius: 0;
+        background: var(--card);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+        list-style: none;
+        padding: 0;
+        opacity: 0;
+        transform: translateY(-10px);
+        pointer-events: none;
+        transition: transform 0.1s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+        z-index: 9999;
+    }
+
+    /* <li></li> */
+    .dd-menu li.selected { 
+        background: var(--listbox-color); 
+    }
+
+    /* Stato attivo solo se NON è selezionato */
+    .dd-menu li:not(.selected):hover {
+        background: var(--card);
+    }
+
+    /* Testo list item  */
+    .dd-menu li {
+        font-size: 20px;
+        color: white;
+        padding: 8px;
+        cursor: pointer;
+    }
+
+    /* Fondo selezione elementi */
+    .dd-menu li:hover {
+        background: var(--listbox-color);
+    }
+
+    .dropdown[aria-expanded="true"] .dd-menu {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    /* Fine */
+
+    /* Testo */
+    #metric-unit {
+        background: none;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 1.5rem;
+        font-weight: 400;
+        background: #333;
+        color: #8f8888;
+        margin: 0 auto;
+        margin-bottom: 30px;
+    }
+
+
+    /* The switch - the box around the slider */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    /* Hide default HTML checkbox */
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    /* The slider */
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+    }
+
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+        box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    .slider.round {
+        border-radius: 34px;
+    }
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+
+ 
+    .switch input[type="checkbox"]:focus {
+        outline: none;
+    }
+
+    /* Contenitore dove metto i tre switch mostra assi nel drawer */
+    .switch-container {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    /* Elementi a sinistra nello switch container */
+    .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logo {
+        width: auto;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .center-finder {
+        background: none;
+        border: none;
+    }
+
+    .center-finder:before {
+        content: "\0444";
+        font-size: 5vw;
+        color: crimson;
+        /*
+        display: inline-block;
+        transform: rotate(90deg)
+        */
+    }
+
+    .fullBlock {
+        background: none;
+        border: none;
+        animation: blink 1s infinite;
+    }
+
+    .fullBlock:before {
+        content: "\2588";
+        font-size: 5vw;
+        color: crimson;
+    }
+
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: 0; }
+    }
+
+    .decorato3 {
+        background: none;
+        border: none;
+    }
+
+    /* Squadra */
+    .decorato3:before {
+        content: "\221F";
+        font-size: 5vw;
+        color: crimson;
+    }
+
+    .reload {
+        background: none;
+        border: none;
+    }
+
+    .reload:before {
+        content: "\21BB";
+        font-size: 5vw;
+        color: crimson;
+    }
+
+    .preset-button {
+        position: relative;
+        background: none;
+        border: 5px groove #494848;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 1.5rem;
+        font-weight: 400;
+        background: #333;
+        color: #8f8888;
+        margin: 0 auto;
+
+        /* Aggiunto dopo */
+        transform: scale(0.7);
+        transform-origin: center;
+        min-width: 80px;
+        min-height: 90px;
+    }
+
+    .preset-button:before {
+        content: "";
+        font-size: 5vw;
+        color: rgb(99, 95, 95);
+    }
+
+    .preset-button:active {
+        background: #313030;
+        border: 5px inset #494848;
+        transition: transform 0.1s eased;
+    }
+
+    .preset-button.pressed {
+        position: relative;
+        border: 5px inset #494848;
+        transition: trasform 0.1s eased;
+    }
+
+
+    /*
+        Combinazione:   
+        'on', 'off'  -> led verde
+        
+        'blink' oppure 'noblink' con 'green', 'orange', 'red', 'blue'
+    */
+    @keyframes ledBlink {
+        0%      { background-color: currentColor }
+        50%     { background-color: #222; }
+        100%    { background-color: currentColor }
+    }
+
+    .preset-button-led {
+        position: absolute;
+        border: 4px inset #494848;
+        top: 4px;
+        left: 4px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: limegreen;
+        /*box-shadow: 0 0 6px limegreen;*/
+    }
+
+    .preset-button-led.off {
+        background: #222;
+        box-shadow: none;
+    }
+
+    .preset-button-led.on {
+        background: limegreen;
+        /*box-shadow: 0 0 6px limegreen;*/
+    }
+
+    .preset-button-led.blink {
+        animation: ledBlink 0.3s infinite;
+    }
+
+    .preset-button-led.noblink {
+        background-color: currentColor;
+    }
+
+    .preset-button-led.green {
+        color: limegreen;
+    }
+
+    .preset-button-led.orange {
+        color: orangered;
+    }
+
+    .preset-button-led.red {
+        color: red;
+    }
+
+    .preset-button-led.blue {
+        color: #007bff;
+    }
+
+    /* PAGINA PRESET A SCHERMO INTERO */
+    .preset-fullpage {
+        border: 8px solid #494848;
+        box-shadow: inset 0 0 30px #000, 0 0 10px rgba(94, 99, 94, 0.4);
+        border-radius: 30px;
+        background:  #111;
+        margin: auto;
+        position: fixed;
+        top: 0; left: 0;
+        width: 70vw;   
+        height: 80vh; 
+        background: var(--bg);
+        z-index: 9999; 
+        overflow-y: auto;
+        padding: 20px;
+        transform: translateY(200%); /* 100vh */
+        transition: transform 1.11s cubic-bezier(0.25, 0.8, 0.25, 1); /* 0.35s */
+    }
+
+    .preset-fullpage.active {
+        transform: translateY(80px); /* 10vh 0 */
+    }
+
+    .preset-header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 30px;
+        font-size: 24px;
+        font-weight: bold;
+        justify-content: space-between;
+    }
+
+    .back-button {
+        background: var(--card);
+        color:#555;
+        border: none;
+        width: 50px; height: 50px;
+        border-radius: 50%;
+        font-size: 28px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        margin-left: 0 auto;
+    }
+
+    .preset-content {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .preset-section-title span {
+        display: block;
+        font-size: 22px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+    }
+
+    .preset-section-title h2 {
+        margin-top: 40px;
+        color: #888;
+    }
+
+    .preset-section-title h1 {
+        color: var(--primary);
+        font-size: 1.8em;
+    }
+
+    .preset-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgb(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease;
+        z-index: 1000;
+        backdrop-filter: blur(15px);
+
+        /* Forza su GPU */
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        will-change: filter, transform;
+    }
+
+    .preset-overlay.open { opacity: 1; visibility: visible; }
+
+    /* ==== CSS PRESET ==== */
+    .preset-section       { margin:20px 0; padding:16px; background:var(--card); border-radius:12px; }
+    /*.section-title span   { font-size:20px; font-weight:600; text-transform:uppercase; color:var(--card); margin-bottom:8px; display:block; }*/
+    .preset-grid          { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+    .preset-actions       { display:flex; gap:10px; }
+     /* ==== CSS PRESET ==== */
+  
+
+     /* temi */
+     .theme-wrapper {
+        display: grid;
+        grid-template-columns: repeat(7, 60px);
+        grid-gap: 15px;
+        padding: 20px;
+        /*
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        */
+        background: rgb(71, 64, 64);
+     }
+
+     .theme {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        transition: transform 0.2s box-shadow 0.2s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        pointer-events: auto;
+    }
+
+     /* si solleva */
+     .theme:hover {
+        transform: translateY(-3px); 
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+     }
+
+     /* effetto premuto */
+     .theme:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+     }
+
+     /* Zoom page */
+     #scaler {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        transform-origin: top left;
+        transition: transform 0.12 ease-out;
+     }
+
+     #zoom-control {
+        position: sticky;
+        bottom: 12px;
+        height: 70px;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: end;
+        /*margin: 12px 16px 0 16px;*/
+        color: var(--card);
+        font-size: 23px;
+        appearance: none;
+        z-index: 10000;
+        transform: none;
+     }
+
+     #zoom-slider {
+        width: 200px;
+        height: 12px;
+        appearance: none;
+        background: #333;
+        border-radius: 6px;
+        outline: none;
+     }
+
+     #zoom-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 15px;
+        height: 40px;
+        background: #2196F3;
+        /*border-radius: 50%;*/
+        box-shadow: 0 0 14px #2196F3;
+     }
+
+     #zoom-value {
+        min-width: 70px;
+        text-align: right;
+        user-select: none;
+     }
+
+
+    .fullBlock         { order: 1; }
+    .openMenu-button   { order: 2; }
+    #metric-unit       { order: 3; margin-left: auto; }
+    .preset-button     { order: 4; }
+    .reload            { order: 5; }
+    .decorato3         { order: 6; }
+    .center-finder     { order: 7; }
+    .fullscreen-button { order: 8; }
+
+      /* Tap highlight nativo quando si preme */
+    .back-button,
+    .drawer-content a,
+    .dd-menu,
+    .dd-toggle,
+    .dd-toggle li,
+    .switch,
+    .switch * {
+        -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    /* Media query per schermi piccoli */
+    @media (max-width: 768px) {
+        .drawer { --drawer-width: 80vw; }
+        /*.button-container { transform: scale(0.65); transform-origin: top left; }*/
+    }
+  </style>
+</head>
+<body>
+<!-- <div class="appDroTitle"><span>DRO PRO</span></div> -->
+    <div class="top-buttons">
+        <button class="fullscreen-button" onclick="fullscreen()" style="margin-left: 40px;"></button>
+        <button class="center-finder"></button>
+        <button class="fullBlock"></button>
+        <button class="decorato3" style="margin-right: 40px;"></button>
+        <button class="preset-button" id="open-presets" style="margin-right: 40px;"> 
+            <span class="preset-button-led blink green"></span> 
+            Preset 
+        </button>
+        <button class="openMenu-button" id="open-drawer" onclick="openDrawer()"></button>
+        <div id="metric-unit">Unit:MM</div>
+    </div>  
+    <div class="bottom-buttons">
+        <!-- vuoto -->
+    </div>
+
+<!-- LAYOUT ROOT -->
+<div id="scaler"> <!-- Per lo zoom dell'intera pagina -->
+<div class="layout-page">
+    <!-- CARD Z -->
+    <div class="card" id="card0">
+        <button class="openCard-button" id="cardZ"></button>
+        <div class="digital-value" id="z"></div>
+        <div class="progressbar"><div class="fill" id="zbar"></div></div>
+        <div class="label">Z</div>
+    </div>
+
+    <!-- CONTROLLI Z -->
+    <div class="button-container" id="tastiPerZ">
+        <button class="mode-toggle" id="modeZ">
+            <span id="absZ" class="mode-label inactive">ABS</span>
+            <span>|</span>
+            <span id="incZ" class="mode-label active">INC</span>
+        </button>
+
+        <button class="mode-toggle" data-axis="z" id="precisionZ">
+            <span class="mode-label inactive" data-decimals="6">6</span>
+            <span>|</span>
+            <span class="mode-label inactive" data-decimals="4">4</span>
+            <span>|</span>
+            <span class="mode-label inactive" data-decimals="3">3</span>
+            <span>|</span>
+            <span class="mode-label inactive" data-decimals="2">2</span>
+        </button>
+
+        <button class="action-button" id="setZ">SET</button>
+        <button class="action-button" id="zeroZ">ZERO</button>
+    </div>
+    
+    <!-- CARD X -->
+    <div class="card" id="card1">
+        <button class="openCard-button" id="cardX"></button>
+        <div class="digital-value" id="x"></div>
+        <div class="progressbar"><div class="fill" id="xbar"></div></div>
+        <div class="label">X</div>
+    </div>
+
+    <!-- CONTROLLI X -->
+    <div class="button-container" id="tastiPerX">
+        <button class="mode-toggle" id="modeX">
+            <span id="absX" class="mode-label inactive">ABS</span>
+            <span>|</span>
+            <span id="incX" class="mode-label active">INC</span>
+        </button>
+
+        <button class="mode-toggle" data-axis="x" id="precisionX">
+            <span class="mode-label inactive" data-decimals="6">6</span>
+            <span>|</span>
+            <span class="mode-label inactive" data-decimals="4">4</span>
+            <span>|</span>
+            <span class="mode-label inactive" data-decimals="3">3</span>
+            <span>|</span>
+            <span class="mode-label inactive" data-decimals="2">2</span>
+        </button>
+
+        <button class="action-button" id="setX">SET</button>
+        <button class="action-button" id="zeroX">ZERO</button>
+    </div>
+</div> <!-- fine layout-page -->
+</div> <!-- scaler -->
+<!-- FINE -->
+
+<div id="keypadQuotaAsse">
+    <div style="text-align:left; font-size:3vw; margin-bottom:3vh; line-height:1.4;">
+        <span style="color:#888;">Asse</span>
+        <span id="nomeAsse" style="color: #888;"> ?</span>
+        <span style="color:#888;">:</span>
+        <span style="letter-spacing:0.8vw; margin:0 2vw;">
+            <span id="quotaAsse" style="color:#888;">0.000000</span> 
+        </span>
+        <span style="color:#666; font-size:2.5vw;" id="unitQuota"></span>
+    </div>
+
+    <!-- Applico un overlay sopra l'input. Non sono riuscito a bloccare la selezione testo -->
+    <div style="position: relative; display:inline-block;">
+        <input type="text" id="inputQuota" placeholder=""
+                readonly onfocus="this.blur()" maxlength="8" oncontextmenu="return false" inputmode="none" 
+                style="letter-spacing: 0.2em;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;"></div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:3vw; margin-top:4vh;">
+        <button class="action-button" onclick="addNum('7')">7</button>
+        <button class="action-button" onclick="addNum('8')">8</button>
+        <button class="action-button" onclick="addNum('9')">9</button>
+        <button class="action-button" onclick="addNum('4')">4</button>
+        <button class="action-button" onclick="addNum('5')">5</button>
+        <button class="action-button" onclick="addNum('6')">6</button>
+        <button class="action-button" onclick="addNum('1')">1</button>
+        <button class="action-button" onclick="addNum('2')">2</button>
+        <button class="action-button" onclick="addNum('3')">3</button>
+        <button class="action-button" onclick="addNum('.')">.</button>
+        <button class="action-button" onclick="addNum('0')">0</button>
+        <button class="action-button" onclick="toggleSign()">-</button>
+        <button class="action-button" onclick="backspace()">DEL</button>
+    </div>
+    <div style="margin-top:5vh; display:flex; gap:4vw;">
+        <button class="action-button" style="flex:1; background:#220500;"
+                onclick="closeKeypadQuota()">ANNULLA</button>
+        <button class="action-button" style="flex:1; background: #00bb44;
+                box-shadow:0 0 20px #00ff00;" onclick="sendValue()">OK</button>
+    </div>
+</div>
+
+<div id="finestraSetup">
+    <div style="text-align:center; font-family:monospace; font-size:6vw; color:#007bff; margin:1vh 0;">
+        SETTINGS</div>
+    <div id="layoutPads" style="display:grid; grid-template-columns:1fr 1fr; gap:12vw; margin-top:3vh;">
+        <div class="settings-pad" data-axis="z" data-name="ppr" data-value="0" data-label="Encoder PPR">Encoder PPR</div>
+        <div class="settings-pad" data-axis="z" data-name="pitch" data-value="0" data-label="Leadscrew Pitch">Leadscrew Pitch</div>
+        <div class="settings-pad" data-axis="x" data-name="ppr" data-value="0" data-label="Encoder PPR">Encoder PPR</div>
+        <div class="settings-pad" data-axis="x" data-name="pitch" data-value="0" data-label="Leadscrew Pitch">Leadscrew Pitch</div>
+        <div class="settings-pad" data-axis="z" data-name="backslash" data-value="0" data-label="Backslash compensation">Leadscrew Pitch</div>
+        <div class="settings-pad" data-axis="x" data-name="backslash" data-value="0" data-label="Backslash compensation">Leadscrew Pitch</div>
+    </div>
+    <div style="margin-top:5vh; display:flex; justify-content:flex-end;">
+            <button class="action-button" style="flex:0; background: #00bb44; font-family:monospace;
+                    box-shadow:0 0 20px #00ff00;" onclick="closeWindowSettings()">ESCI</button>
+    </div>
+</div> 
+
+<div id="keypadForSetup">
+    <div class="settings-header">
+        <span id="settingsName">?</span>
+        <span id="settingsValue">?</span>
+    </div>
+
+    <!-- Anche qui un overlay -->
+    <div style="position: relative; display:inline-block;">
+        <input type="text" id="inputSetting" placeholder=""
+                readonly onfocus="this.blur()" maxlength="8" oncontextmenu="return false" inputmode="none" 
+                style="letter-spacing: 0.2em;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;"></div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:3vw; margin-top:4vh;">
+        <button class="action-button" onclick="addNum('7')">7</button>
+        <button class="action-button" onclick="addNum('8')">8</button>
+        <button class="action-button" onclick="addNum('9')">9</button>
+        <button class="action-button" onclick="addNum('4')">4</button>
+        <button class="action-button" onclick="addNum('5')">5</button>
+        <button class="action-button" onclick="addNum('6')">6</button>
+        <button class="action-button" onclick="addNum('1')">1</button>
+        <button class="action-button" onclick="addNum('2')">2</button>
+        <button class="action-button" onclick="addNum('3')">3</button>
+        <button class="action-button" id="btnDot" onclick="addNum('.')">.</button>
+        <button class="action-button" onclick="addNum('0')">0</button>
+        <button class="action-button" id="btnMinus" onclick="toggleSign()">-</button>
+        <button class="action-button" onclick="backspace()">DEL</button>
+    </div>
+    <div style="margin-top:5vh; display:flex; gap:4vw;">
+        <button class="action-button" style="flex:1; background:#220500;"
+                onclick="closeSettingsKeypad()">ANNULLA</button>
+        <button class="action-button" style="flex:1; background: #00bb44;
+                box-shadow:0 0 20px #00ff00;" onclick="sendValue()">SALVA</button>
+    </div>
+</div>
+<!--
+ <div style="position:fixed; bottom:1vh; left:1vw; font-size:2vw; color:#888; opacity:0.6;">
+        v1.0 - @AZTEC - 11/11/2025
+</div>
+-->
+<!-- ################################ PRESET ################################ -->
+<!-- PAGINA PRESET A SCHERMO INTERO (nascosta all'inizio) -->
+<div id="preset-overlay" class="preset-overlay"></div>
+<div id="preset-page" class="preset-fullpage">
+  <!-- HEADER CON FRECCIA INDIETRO -->
+  <div class="preset-header">
+    <h2>Preset Lavoro</h2>
+    <button onclick="closePresetsWindow()" class="back-button">X</button>
+  </div> 
+
+  <div class="preset-content">
+    <div class="preset-grid">
+      <!-- codice di identificazione .preset-g54-g59 per non confondere con altri preset-button -->
+      
+      <button class="preset-button preset-g54-g59" data-preset="G54"><span id="led-G54" class="preset-button-led off"></span>G54</button>
+      <button class="preset-button preset-g54-g59" data-preset="G55"><span id="led-G55" class="preset-button-led off"></span>G55</button>
+      <button class="preset-button preset-g54-g59" data-preset="G56"><span id="led-G56" class="preset-button-led off"></span>G56</button>
+      <button class="preset-button preset-g54-g59" data-preset="G57"><span id="led-G57" class="preset-button-led off"></span>G57</button>
+      <button class="preset-button preset-g54-g59" data-preset="G58"><span id="led-G58" class="preset-button-led off"></span>G58</button>
+      <button class="preset-button preset-g54-g59" data-preset="G59"><span id="led-G59" class="preset-button-led off"></span>G59</button>
+    </div>
+
+    <div class="preset-actions">
+      <button id="save-preset" class="preset-button">▲ Salva</button>
+      <button id="zero-preset" class="preset-button">▲ Clear</button>
+    </div>
+    <br>
+    <br>
+    <div class="preset-section-title">
+        <h2>Posizione Macchina assoluta</h2><br>
+        <h1>X:</h1><span id="raw-x">0.000</span><br>
+        <h1>Z:</h1><span id="raw-z">0.000</span><br>
+    </div>
+    <br>
+    <div class="preset-section-title">
+        <h2>Posizione Pezzo (relativa al preset attivo)</h2><br>
+        <h1>X:</h1><span id="dro-x">0.000</span><br>
+        <h1>Z:</h1><span id="dro-z">0.000</span><br>
+    </div>
+  </div>
+</div>
+
+<!-- ################################ MENU LATERALE ################################ -->
+
+<!-- Overlay per chiudere il drawer-->
+<div id="overlay" class="overlay"></div>
+<!-- Drawer laterale -->
+<div id="drawer" class="drawer">
+   <div class="drawer-header">
+        <!--<h1>DRO PRO</h1>-->
+        <img src="/logo.png" alt="DRO PRO" class="logo">
+        <p class="version">v1.0 - @AZTEC 2025</p>
+    </div>
+   <!-- Tutto è dentro in questo contenitore -->
+   <div class="drawer-content">
+        <br>
+        <br>
+        <br>
+        <div class="section-title" style="text-align:center;">
+            <span>🔰 General settings</span>
+        </div>
+        <br>
+        <br>
+        <div class="section-title">
+            <span>Mostra</span>
+            <hr class="divider">
+        </div>
+        <br>
+        <div class="switch-container">
+            <div class="row">
+                <label>Asse Z</label>
+                <label class="switch">
+                    <input type="checkbox" name="asseZ" checked onclick="showCardZ(this)">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="row">
+                <label>Asse Y</label>
+                <label class="switch">
+                    <input type="checkbox" name="asseY" onclick="showCardY(this)">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="row">
+                <label>Asse X</label>
+                <label class="switch">
+                    <input type="checkbox" name="asseZ" checked onclick="showCardX(this)">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div> <!-- fine switch-container -->
+        <br>
+        <div class="section-title">
+            <span>Unità</span>
+            <hr class="divider">
+        </div>
+        <div class="dropdown" id="unit-dd" aria-haspopup="listbox" aria-expanded="false">
+            <button class="dd-toggle" type="button">Unità</button>
+            <ul class="dd-menu" role="listbox">
+                <li role="option" data-value="0" aria-selected="true">Millimetri (mm)</li>
+                <li role="option" data-value="1">Pollici (inch)</li>
+            </ul>
+        </div>
+        <br>
+        <br>
+        <div class="section-title" style="text-align:center;">
+            <span>🔰 User interface settings</span>
+        </div>
+        <br>
+        <br>
+        <div class="section-title">
+            <span>Screen idle</span>
+            <hr class="divider">
+        </div>
+        <div class="dropdown" id="sleep-mode" aria-haspopup="listbox" aria-expanded="false">
+            <button class="dd-toggle" type="button">Minuti</button>
+            <ul class="dd-menu" role="listbox">
+                <li role="option" data-value="180" aria-selected="true">3min</li>
+                <li role="option" data-value="300">5min</li>
+                <li role="option" data-value="600">10min</li>
+                <li role="option" data-value="900">15min</li>
+                <li role="option" data-value="1200">20min</li>
+                <li role="option" data-value="1500">25min</li>
+                <li role="option" data-value="1800">30min</li>
+                <li role="option" data-value="2700">45min</li>
+                <li role="option" data-value="0">Mai</li>
+            </ul>
+        </div>
+        <!-- temi -->
+        <br>
+        <br>
+        <div class="section-title">
+            <span>Temi</span>
+            <hr class="divider">
+        </div>
+        <div class="theme-wrapper">
+            <div class="theme" onclick="setTheme('limon')"     style="background-color:#ccff00;"></div>
+            <div class="theme" onclick="setTheme('purple')"    style="background-color:#9807f8;"></div>
+            <div class="theme" onclick="setTheme('pink')"      style="background-color:#e83e8c;"></div>            
+            <div class="theme" onclick="setTheme('tomato')"    style="background-color:tomato;"></div>
+            <div class="theme" onclick="setTheme('orange')"    style="background-color:#ff8c00;"></div>
+            <div class="theme" onclick="setTheme('masso')"     style="background-color:#00ff41;"></div>
+            <div class="theme" onclick="setTheme('carrot')"    style="background-color:#b81d1d;"></div>
+            <div class="theme" onclick="setTheme('redalert')"  style="background-color:#ff0033;"></div>
+            <div class="theme" onclick="setTheme('crimson')"   style="background-color:crimson;"></div>
+            <div class="theme" onclick="setTheme('tron')"      style="background-color:#00d0ff;"></div>
+            <div class="theme" onclick="setTheme('teal')"      style="background-color:#20c997;"></div>
+            <div class="theme" onclick="setTheme('halloween')" style="background-color:#ec3b05;"></div>
+            <div class="theme" onclick="setTheme('snow')"      style="background-color:rgb(178, 211, 224);"></div>
+        </div>
+        <!-- zoom slider -->
+        <br>
+        <br>
+        <div class="section-title">
+            <span>Layout</span>
+            <hr class="divider">
+        </div>
+        <div class="switch-container">
+        <div id="zoom-control">
+            <span>Zoom: </span>
+                <input type="range" id="zoom-slider" min="60" max="100" value="100" step="5">
+            <span id="zoom-value">100%</span>
+        </div>
+        </div>
+    </div> <!-- fine drawer-content -->
+</div> <!-- fine drawer -->
+<!-- FINE -->
+<script>
+    // ******************************************************************************
+    //  DROPRO - Digital Readout
+    // ******************************************************************************
+    let cifre = Array(9).fill('');
+    let virtualKeypad = ['keypadQuotaAsse', 'keypadForSetup'];
+    let keypadInput = ['inputQuota', 'inputSetting'];
+    let keypad_i = 0;
+    let currentAxis = null;
+    let currentSetting = null;
+   
+    let idleTimeout = 0; 
+    let idleInterval;
+    let idleTime = 0;
+    let quotaZ = 0;
+    let quotaX = 0;
+
+    let precision = {
+        z: 6,
+        x: 6
+    }
+
+    // Avviso al server che la pagina è caricata 
+    window.addEventListener("DOMContentLoaded", () => {
+        fetch("/index?loaded=1");
+    });
+
+    
+    // Blocca ogni menu contestuale del browser
+    document.addEventListener("contextmenu", e => e.preventDefault());
+
+    // Ricarica pagina
+    function reloadPage() { 
+        location.reload(); 
+    }
+
+    // Pulisci input 
+    function clearInput() { cifre = Array(9).fill(''); }
+
+
+    // Formato quote con decimali 
+    function formatDRO(value, axis) {
+        const decimals = precision[axis] || 6;
+        const num = Number(value);
+
+        // -0 diventa 0, tutto il resto rimane
+        return (num === 0 ? 0 : num).toFixed(decimals);
+    }
+
+
+    // Attiva timer sleep idle
+    function startIdleTimer() {
+        clearInterval(idleInterval);
+        idleTime = 0;
+        
+        if (idleTimeout === 0) return;
+
+        document.body.classList.remove('blur-active');
+        
+        idleInterval = setInterval(() => {
+            idleTime++;
+            if (idleTime >= idleTimeout) {
+                document.body.classList.add('blur-active');
+                clearInterval(idleInterval);
+            }
+        }, 1000);
+    }
+
+    // Ad ogni schermo premuto resetta timer idle 
+    document.addEventListener('touchstart', startIdleTimer);
+    // Al caricamento fai partire il timer 
+    document.addEventListener('DOMContentLoaded', startIdleTimer);
+
+
+    // Evento pressione a tasto prolungato
+    function longPressEvent(el, callback, delay = 500) {
+        let timer;
+
+        el.addEventListener('touchstart', () => {
+            timer = setTimeout(() => {
+                callback();
+            }, delay);
+        });
+
+        el.addEventListener('touchend', () => {
+            clearTimeout(timer);
+        });
+
+        el.addEventListener('touchmove', () => {
+            clearTimeout(timer);
+        });
+    }
+
+
+    // Leggi file data.json aggiornato dal server
+    function updateDRO() {
+      fetch('/data').then(r=>r.json()).then(d=>{
+        document.getElementById('z').innerText = formatDRO(d.z, 'z');
+        document.getElementById('x').innerText = formatDRO(d.x, 'x'); 
+        document.getElementById('zbar').style.width = Math.min(Math.abs(d.z)/5*100,100)+'%';
+        document.getElementById('xbar').style.width = Math.min(Math.abs(d.x)/3*100,100)+'%';
+       
+
+        /* Se schermo è offuscato (blur) e assi da fermo vanno in spostamento
+           faccio partire il timer di nuovo
+        */
+        if (quotaZ !== d.z || quotaX !== d.x) {
+            startIdleTimer();
+
+            quotaZ = d.z;
+            quotaX = d.x;
+        }
+      }).catch(() => {
+            document.getElementById('z').innerText = formatDRO(0, 'z');
+            document.getElementById('x').innerText = formatDRO(0, 'x');
+      });
+    }
+
+    
+    // Keypad per inserimento quote 
+    function openKeypadQuota(axis) {
+        currentAxis = axis;
+        currentSetting = null;
+        keypad_i = 0;
+
+        // Aggiorna testo incr oppure inch
+        const saved = localStorage.getItem('unit-dd');
+        document.getElementById('unitQuota').innerText = metricStringName(saved).toUpperCase();
+
+        document.getElementById('nomeAsse').innerText = axis.toUpperCase();
+        document.getElementById('inputQuota').value = '☼';
+        
+        clearInput();
+
+        // Live update quote asse quando sono in movimento
+        window.updateKeypadQuota = () => {
+            const live = parseFloat(document.getElementById(axis).innerText) || 0;
+            document.getElementById('quotaAsse').innerText = formatDRO(live, currentAxis);
+        };
+        window.updateKeypadQuota();
+        window.keypadLiveUpdate = setInterval(window.updateKeypadQuota, 80);
+  
+        // Mostra tastiera 
+        document.getElementById('keypadQuotaAsse').style.display = 'block';
+    }
+
+    
+    // Chiude la tastiera 
+    function closeKeypadQuota() {
+        document.getElementById('keypadQuotaAsse').style.display = 'none';
+        clearInterval(window.keypadLiveUpdate);
+    }
+
+    
+    // Inserici cifre 
+    function addNum(num) {
+        const isQuotaKeypad = keypad_i === 0;
+        const visible = cifre.slice(0, 8);
+
+        // Max input
+        if (visible.filter(c => c !== '').length >= 8) {
+            warnInput();
+            return;
+        }
+       
+        // Solo un punto
+        if (num === '.' && visible.includes('.')) {
+            warnInput();
+            return;
+        }
+
+        // Solo un zero prima del punto
+        if (num === '0' && visible[7] === '0' && visible[6] === '') {
+            warnInput();
+            return;
+        }
+
+        // Controlla il massimo inserimento decimali
+        if (isQuotaKeypad && visible.includes('.') && num !== '.') {
+            const dopoIlPunto = visible.slice(visible.indexOf('.') + 1);
+            const conteggioDecimali = dopoIlPunto.filter(c => c !== '').length;
+            const maxDecimali = precision[currentAxis];
+
+            if (conteggioDecimali >= maxDecimali) {
+                warnInput();
+                return;
+            }
+        }
+
+        for (let i = 0; i < 7; i++) cifre[i] = cifre[i + 1];
+        cifre[7] = num;
+
+        playClick();
+
+        updateInput();
+    }
+
+
+    // Avviso 
+    function warnInput() {
+        const input = document.getElementById(virtualKeypad[keypad_i]);
+        if (!input) return;
+
+        input.classList.add('input-warning');
+        setTimeout(() => input.classList.remove('input-warning'), 300);
+    }
+
+    
+    // Tasto DEL
+    function backspace() {
+        cifre = ['', ...cifre.slice(0, 7), cifre[8]];
+
+        const hasDigits = cifre.slice(0, 8).some(c => c >= '0' && c <= '9');
+        if (!hasDigits && cifre[8] === '-') {
+            cifre[8] = '';
+        }
+
+        playClick();
+        updateInput();
+    }   
+
+    
+    // Toglie il segno meno
+    function toggleSign() {
+        cifre[8] = (cifre[8] === '-') ? '' : '-';
+        playClick(); updateInput();
+    }
+
+
+    // Manda al server la quota oppure la configurazione
+    function sendValue() {
+        let digits = cifre.slice(0, 8).join('').replace(/[^0-9.]/g, '');
+        let sign = cifre[8] === '-' ? -1 : 1;
+        let val = parseFloat(digits);
+
+
+        if (digits === '') { closeKeypadQuota(); return; }
+        if (isNaN(val)) val = 0;
+
+        val = val * sign;
+
+
+        if (keypad_i === 0) {
+            fetch("/setQuota?axis=" + currentAxis + "&value=" + val);
+            closeKeypadQuota();
+        } else if (keypad_i === 1) {
+            const card =  document.querySelector(`.settings-pad[data-name="${currentSetting}"][data-axis="${currentAxis}"]`);
+            if (!card) 
+                return;
+
+            const key = "setting_" + currentSetting + "_" + currentAxis;
+
+            card.dataset.value = val;
+            //card.innerText = `${currentSetting.toUpperCase()}: ${val}`;
+            localStorage.setItem(key, val);
+
+            // Non configurato
+            if (val == 0) {                
+                card.style.backgroundColor = "red";
+                card.style.color = "white";
+                card.innerText = `${card.dataset.label}`;
+            } else {
+                card.style.backgroundColor = "";
+                card.style.color = "";
+                card.innerText = `${card.dataset.label}:\n${val} ✔`;
+                setTimeout(() => card.innerText = `${card.dataset.label}:\n${val}`, 800);
+            }
+                          
+            fetch("/settings?axis=" + currentAxis + "&setting=" + currentSetting + "&value=" + val); 
+            closeSettingsKeypad();
+        }
+
+        clearInput();
+
+        //updateInput();
+        
+        
+    }
+
+
+    // Formata cifre 
+    function formatQuota(cifre) {
+        let raw = cifre.slice(0, 8).join('').replace(/[^0-9.]/g, '');
+        
+        if (raw.startsWith('.')) raw = '0' + raw;
+        if (cifre[8] === '-' && raw === '') return '-';
+        if (!raw) return '';
+        if (cifre[8] === '-') raw = '-' + raw.replace(/^-/, '');
+       
+        return raw;
+    }
+
+
+    // Aggiorna il testo del valore inserito
+    function updateInput() {
+        const n = formatQuota(cifre);
+        const el = document.getElementById(keypadInput[keypad_i]);
+        el.value = n || '☼';
+        el.style.boxShadow = '0 0 50px #cf35ab';
+        setTimeout(() => el.style.boxShadow = '3px 3px 20px #007bff', 150);
+    }
+
+
+    // Evento click zero assi
+    function zero(a) {
+      fetch('/zero?a='+a).then(()=>{
+        const el = document.getElementById(a.toLowerCase());
+        el.innerText = formatDRO(0, a);
+        el.classList.add('zero-flash');
+        updateDRO();
+        setTimeout(()=>el.classList.remove('zero-flash'),400);
+      });
+    }
+
+
+    // Switch ABS|INC 
+    function toggleButton(mode, abs, inc, axis) {
+        document.getElementById(mode).onclick = () => {
+            const a = document.getElementById(abs);
+            const i = document.getElementById(inc);
+
+            a.classList.toggle("active"); a.classList.toggle("inactive");
+            i.classList.toggle("active"); i.classList.toggle("inactive");
+
+            const mode = a.classList.contains("active") ? "ABS" : "INC";
+            
+            /* Manda al server la modalita' scelta */
+            fetch("/mode?axis=" + axis + "&value=" + mode);
+            playClick();
+        }; 
+    }
+
+
+    // Suono click
+    const clickSound = new Audio('/click.mp3');
+    function playClick() {
+        clickSound.currentTime = 0;
+        clickSound.play().catch(() => {});
+    }
+
+
+    // Tastiera delle impostazioni
+    function openSettingsKeypad(name, value) {
+        currentSetting = name;
+        keypad_i = 1;
+       
+        const saved = localStorage.getItem("setting_" + name + "_" + currentAxis);
+    
+        document.getElementById('settingsName').innerText = name.toUpperCase();
+        document.getElementById('settingsValue').innerText = saved !== null ? saved : value;
+        document.getElementById('inputSetting').value = '☼';
+
+        // Il segno meno e il punto sulla tastiera 
+        const btnMinus = document.getElementById("btnMinus");
+        const btnDot = document.getElementById("btnDot");
+
+        // Solo valori interi e in positivo
+        if (name === "ppr") {
+            // Rimuovi tasti meno e punto
+            btnMinus.style.display = 'none';
+            btnDot.style.display = 'none';
+        } 
+
+        // Mostra tastiera e pulisci input 
+        document.getElementById('keypadForSetup').style.display = 'block';
+    
+        clearInput();
+    }
+
+
+    // Chiude tastiera
+    function closeSettingsKeypad() {
+        document.getElementById('keypadForSetup').style.display = 'none';
+        document.getElementById('btnMinus').style.display = 'block';
+        document.getElementById('btnDot').style.display = 'block';
+    }
+
+
+    // Apre la finestra con un elenco di schede di impostazioni
+    function openWindowSettings() {
+        if (!currentAxis) return;
+        document.getElementById('finestraSetup').style.display = 'block';
+        document.body.classList.add('settings-open');
+
+        document.querySelectorAll('.settings-pad').forEach(card => {
+            if (card.dataset.axis == currentAxis) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+       });
+    }
+
+
+    // Chiude impostazioni
+    function closeWindowSettings() {
+        document.getElementById('finestraSetup').style.display = 'none';
+        document.body.classList.remove('settings-open');
+    }
+
+
+    // Tasti switch ABS|INC 
+    toggleButton("modeZ", "absZ", "incZ", "z");
+    toggleButton("modeX", "absX", "incX", "x");
+
+    // Azzera asse Z
+    document.getElementById("zeroZ").addEventListener("click", () => {
+        playClick();
+        zero('z');
+    });
+
+    // Azzera asse X
+    document.getElementById("zeroX").addEventListener("click", () => {
+        playClick();
+        zero('x');
+    });
+
+
+    // Tasti set (aprono tastiera)
+    document.getElementById('setZ').onclick = () => openKeypadQuota('z');
+    document.getElementById('setX').onclick = () => openKeypadQuota('x');
+
+
+    // Chiude tastiera toccando fuori
+    document.getElementById('keypadQuotaAsse').onclick = e => {
+        if (e.target === e.currentTarget) closeKeypadQuota();
+    };
+
+
+    // Click su card -> APRE SETTIGNS
+    document.getElementById('cardZ').onclick = () => {
+        currentAxis = "z";
+        playClick();
+        openWindowSettings();
+    }
+
+
+    // Click su card -> APRE SETTIGNS
+    document.getElementById('cardX').onclick = () => {
+        currentAxis = "x";
+        playClick();
+        openWindowSettings();
+    }
+
+
+    // Nasconde scheda asse Z
+    function showCardZ(el) {
+        if (el.checked) {
+            document.getElementById('card0').style.display = 'block';
+            document.getElementById('tastiPerZ').style.display = 'block';
+        } else {
+            document.getElementById('card0').style.display = 'none';
+            document.getElementById('tastiPerZ').style.display = 'none';
+        }
+    }
+
+
+    // Nasconde scheda asse X
+    function showCardX(el) {
+        if (el.checked) {
+            document.getElementById('card1').style.display = 'block';
+            document.getElementById('tastiPerX').style.display = 'block';
+        } else {
+            document.getElementById('card1').style.display = 'none';
+            document.getElementById('tastiPerX').style.display = 'none';
+        }
+    }
+    
+    /* Mettere un overlay a tempo perché a fine pressione si apre la finestra 
+       con la tastiera sotto il dito causando un inserimento numero involontario 
+    */
+    // Pressione lunga su schede di impostazione
+    document.querySelectorAll('.settings-pad').forEach(card => {
+        const name = card.dataset.name;
+        const value = card.dataset.value;
+
+        longPressEvent(card, () => {
+            playClick();
+            openSettingsKeypad(name, value);
+        });
+    });
+
+
+    // Controllo tutte le impostazioni siano settate
+    function isFullConfigured() {
+        const unconfigured = Array.from(document.querySelectorAll(".settings-pad"))
+            .filter(card => card.dataset.value === "0" || card.dataset.value === "");
+        return unconfigured.length === 0;
+    }
+
+
+    // Pulisci dati salvati in localStorage
+    function clearCache() {
+        localStorage.clear(); localStorage.reaload();
+    }
+
+
+    // Carica tutti le impostazione dal localStorage
+    window.addEventListener("DOMContentLoaded", () => {
+        //clearCache();
+        document.querySelectorAll(".settings-pad").forEach(card => {
+            const name = card.dataset.name;
+            const axis = card.dataset.axis;
+            const label = card.dataset.label;
+            const key = "setting_" + name + "_" + axis;
+
+            const value = localStorage.getItem(key);
+            
+            if (value !== null) {
+                card.dataset.value = value;
+                //card.innerText = `${name.toUpperCase()}: ${value}`;
+
+                fetch("/settings?axis=" + axis + "&setting=" + name + "&value=" + value); 
+            }
+
+            // Colora se non configurato
+            if (card.dataset.value === "0" || card.dataset.value === "") {
+                card.style.backgroundColor = "red";
+                card.style.color = "white";
+                card.innerText = `${card.dataset.label}`;
+            } else {
+                card.style.backgroundColor = "";
+                card.style.color = "";
+                card.innerText = `${card.dataset.label}:\n${value}`;
+            }
+        });
+    });
+
+
+    // Impostazioni vuote
+    document.querySelectorAll(".settings-pad").forEach(card => {
+        if (card.dataset.value === "0") {
+            card.style.backgroundColor = "red";
+        }
+    });
+
+
+    // Gestore per entrambi i selettori
+    document.querySelectorAll('[id^="precision"]').forEach(selector => {
+        selector.onclick = (e) => {
+            const label = e.target.closest('.mode-label');
+            if (!label) return; // Click fuori
+            if (label.classList.contains('active')) return; // Gia' selezionato
+
+            const axis = selector.dataset.axis;
+            const decimals = parseInt(label.dataset.decimals);
+
+            // Attiva solo il cliccato, disattiva gli altri
+            selector.querySelectorAll('.mode-label').forEach(l => {
+                const isActive = parseInt(l.dataset.decimals) === decimals;
+                l.classList.toggle('active', isActive);
+                l.classList.toggle('inactive', !isActive);
+            });
+
+            // Salva
+            precision[axis] = decimals;
+            localStorage.setItem(`dro_precision_${axis}`, decimals);
+
+            // Aggiorna subito il valore
+            updateDRO(); playClick();
+        }
+    });
+
+
+    // Carica preferenze al boot
+    document.addEventListener('DOMContentLoaded', () => {
+        ['z', 'x'].forEach(axis => {
+            const saved = localStorage.getItem(`dro_precision_${axis}`);
+            const decimals = saved ? parseInt(saved) : 6;
+            precision[axis] = decimals;
+
+             // id="precisionZ" id="precisionX"
+             const selector = document.getElementById(`precision${axis.toUpperCase()}`);
+             if (!selector) return;
+
+            selector.querySelectorAll('.mode-label').forEach(l => {
+                const isActive = parseInt(l.dataset.decimals) === decimals;
+                l.classList.toggle('active', isActive);
+                l.classList.toggle('inactive', !isActive);
+            });
+        });
+
+        updateDRO();
+
+        setInterval(updateDRO, 100);
+    });
+
+
+    // Schermo intero
+    function fullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    }
+    
+    
+    // Aggiorna ogni 100ms
+    setInterval(updateDRO, 100);
+    // Prima volta 
+    updateDRO();
+
+    
+
+
+    // ******************************************************************************
+    //  Drawer menu laterial
+    // ******************************************************************************
+    // Prendo la larghezza del drawer dal css
+    function getDrawerWidth() {
+        const style = getComputedStyle(document.documentElement);
+        const width = style.getPropertyValue('--drawer-width').trim();
+        return parseInt(width);
+    }
+
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('overlay');
+    const drawerContent = drawer.querySelector('.drawer-content');
+
+    const DRAWER_WIDTH = getDrawerWidth();
+    const SPRING_FORCE = 0.5;
+
+    let isScrollingY = false;
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+
+
+    // Intercetta lo scrolling Y 
+    drawerContent.addEventListener('scroll', () => {
+        isScrollingY = true;
+        clearTimeout(window.scrollTimeout);
+        window.scrollTimeout = setTimeout(() => {
+            isScrollingY = false;
+        }, 300);
+    });
+
+
+    // Click su overlay chiude il drawer 
+    overlay.addEventListener('click', () => {
+        if (drawer.classList.contains('open')) {
+            closeDrawerInstant();
+        }
+    });
+
+
+    /* In handleTouchEnd al swipe rilasciato il drawer torna nella posizione aperta, 
+       dobbiamo resettare le drawer e overlay. 
+    */
+    function closeDrawerInstant() {
+        drawer.classList.remove('open');
+        overlay.classList.remove('open');
+
+        drawer.style.transition = '';
+        drawer.style.transform = '';
+        overlay.style.opacity = '';
+        overlay.style.visibility = '';
+
+        resetTouchState();
+        stopTouchEvents();
+    }
+
+    // Funzione apertura
+    function openDrawer() {
+        if (drawer.classList.contains('open')) return;
+        // Importante resettare
+        drawer.style.transition = '';
+        drawer.style.transform = '';
+        overlay.style.opacity = '';
+        overlay.style.visibility = '';
+
+        drawer.classList.add('open');
+        overlay.classList.add('open');
+
+        resetTouchState();
+        stopTouchEvents();
+        startTouchEvents();
+    }
+
+    // Funzione chiusura
+    function closeDrawer() {
+        drawer.classList.remove('open');
+        overlay.classList.remove('open');
+        resetTouchState();
+        stopTouchEvents();
+    }
+
+    function resetTouchState() {
+        startX = 0;
+        currentX = 0;
+        isDragging = false;
+    }
+
+    // Touch events per swipe
+    function startTouchEvents() {
+        drawer.addEventListener('touchstart', handleTouchStart, { passive: true });
+        drawer.addEventListener('touchmove', handleTouchMove, { passive: false });
+        drawer.addEventListener('touchend', handleTouchEnd, { passive: true });
+        drawer.addEventListener('touchcancel', handleTouchCancel, { passive: true });
+    }
+
+    function stopTouchEvents() {
+        drawer.removeEventListener('touchstart', handleTouchStart);
+        drawer.removeEventListener('touchmove', handleTouchMove);
+        drawer.removeEventListener('touchend', handleTouchEnd);
+        drawer.removeEventListener('touchcancel', handleTouchCancel);
+    }
+
+    // Inizio tocco
+    function handleTouchStart(e) {
+        startX = e.touches[0].clientX;
+        currentX = startX;
+        isDragging = true;
+        drawer.style.transition = 'none';
+    }
+
+    // Durante tocco (swipe)
+    function handleTouchMove(e) {
+        if (!isDragging || isScrollingY) { return; }
+        
+        currentX = e.touches[0].clientX;
+        const deltaX = currentX - startX;
+
+        // Solo swipe da sinistra a destra (chiusura)
+        if (deltaX < 0 && drawer.classList.contains('open')) {
+            const translateX = Math.min(Math.max(deltaX), 0); // Non oltre -300px
+            drawer.style.transform = `translateX(${translateX}px)`;
+            overlay.style.opacity = 1 + (translateX / 300); // Sfuma overlay
+        }
+    }
+
+    // Fine tocco (rilascio)
+    function handleTouchEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        isScrollingY = false;
+        const deltaX = currentX - startX;
+        const threshold = 300; // Chuide se > 144px
+       
+        drawer.style.transform = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Riabilita transizione con easing molla
+
+        // Swipe da destra a sinistra -> deltaX < -144
+        if (deltaX < -threshold) {
+            // Swipe sufficiente -> chuidi con effetto molla
+            closeDrawerWithSpring();
+        } else {
+            // Torna alla posizione aperta
+            drawer.style.transform = 'translateX(0)'
+            overlay.style.opacity = '1';
+        }
+    }
+
+    // Annulla drag
+    function handleTouchCancel(e) {
+        if (!isDragging) return;
+
+        isDragging = false;
+        drawer.style.transform = 'translateX(0)';
+        overlay.opacity = '1';
+    }
+
+    // Effetto molla per apertura
+    function openDrawerWithSpring() {
+        const start = { x: parseFloat(drawer.style.transform.match(/-?\d+/) || -DRAWER_WIDTH) };
+        const end = { x: 0 };
+        animateSpring(start, end, DRAWER_WIDTH, 'open');
+    }
+
+    // Effetto molla per chiusura
+    function closeDrawerWithSpring() {
+        const start = { x: parseFloat(drawer.style.transform.match(/-?\d+/) || 0) };
+        const end = { x: -DRAWER_WIDTH };
+        animateSpring(start, end, 90, 'close');
+    }
+
+    // Animazione molla (easing elastica con sin)
+    function animateSpring(start, end, duration, type) {
+        const startTime = performance.now();
+        const distance = end.x - start.x;
+
+        function step(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Easing molla (bounce)
+            const bounce = Math.sin(progress * Math.PI * 2) * SPRING_FORCE * (1 - progress); // Effetto molla
+            const eased = progress + bounce;
+
+            const translateX = start.x + (distance * eased);
+            drawer.style.transform = `translateX(${translateX}px)`;
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                // Fine animazione
+                if (type === 'close') {
+                    closeDrawer();
+                } else {
+                    openDrawer();
+                }
+            }
+        }
+
+        requestAnimationFrame(step);
+    }
+ 
+
+
+    // ******************************************************************************
+    //  Listbox
+    // ******************************************************************************
+    function metricStringName(value) {
+        return (value === '0' ? "mm" : "inch");
+    }
+
+
+    // Disattiva selezione tema
+    function toggleThemes(disable) {
+        document.querySelectorAll('.theme').forEach(el => {
+            el.style.pointerEvents = disable ? 'none' : 'auto';
+        });
+    }
+
+
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll('.dropdown').forEach(dd => {
+            const btn = dd.querySelector('.dd-toggle'); // Bottone listbox
+            const menu = dd.querySelector('.dd-menu'); // Listitems
+            const id = dd.id;   // unit-dd sleep-mode ... // Nome id della listbox
+            
+
+            btn.addEventListener('click', () => {
+                expanded = dd.getAttribute('aria-expanded') === 'true';
+                dd.setAttribute('aria-expanded', expanded ? 'false' : 'true'); 
+
+                /* Il click passa attraverso il menu sopra i pulsanti selezione temi */
+                toggleThemes(true);
+            });
+
+            // Selezione elementi nella listbox
+            const onSelect = e => {
+                const option = e.target.closest('li');
+                if (!option) return;
+
+                menu.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
+                option.classList.add('selected');
+                btn.textContent = option.textContent;
+                // Chiudi lista
+                dd.setAttribute('aria-expanded', 'false');
+                // Riattiva selezione temi
+                setTimeout(toggleThemes(false), 1500);
+
+                localStorage.setItem(id, option.dataset.value);
+
+                if (id === 'unit-dd') {
+                    // Invia al server
+                    fetch(`/unit?value=${parseInt(option.dataset.value)}`);
+                    // Aggiorna unità metrica scelta
+                    document.getElementById('metric-unit').innerText = 
+                        "Unit:" + metricStringName(option.dataset.value).toUpperCase();
+                } else if (id === 'sleep-mode') {
+                    idleTimeout = parseInt(option.dataset.value);
+                    startIdleTimer();
+                }
+            };
+
+            // Installa eventi
+            menu.addEventListener('click', onSelect);
+            //menu.addEventListener('touchstart', onSelect, { passive: true });
+
+            // Click fuori chiude listbox
+            document.addEventListener('click', e => {
+                if (!dd.contains(e.target)) dd.setAttribute('aria-expanded', 'false');
+                toggleThemes(false);
+            });
+
+            const saved = localStorage.getItem(id);
+            if (saved) {
+                const option = menu.querySelector(`li[data-value="${saved}"]`);
+                if (option) {
+                    menu.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
+                    option.classList.add('selected');
+                    btn.textContent = option.textContent;
+
+                    if (id === 'unit-dd') {
+                        // Manda al server 
+                        fetch(`/$unit?value=${parseInt(option.dataset.value)}`);
+                        // Aggiorna unità metrica scelta
+                        document.getElementById('metric-unit').innerText = 
+                            "Unit:" + metricStringName(option.dataset.value).toUpperCase();
+                    } else if (id === 'sleep-mode') {
+                        idleTimeout = parseInt(option.dataset.value);
+                        startIdleTimer();
+                    }
+                }
+            } else { // Default
+                const option = menu.querySelector('[aria-selected="true"]');
+                if (option) {
+                    option.classList.add('selected');
+                    btn.textContent = option.textContent;
+                }
+            }
+        });
+    });
+
+
+
+    // ******************************************************************************
+    //  Presets
+    // ******************************************************************************
+
+    /* Slots */
+    let presets = {
+        G54: { x: 0, z: 0, saved: false },
+        G55: { x: 0, z: 0, saved: false },
+        G56: { x: 0, z: 0, saved: false },
+        G57: { x: 0, z: 0, saved: false },
+        G58: { x: 0, z: 0, saved: false },
+        G59: { x: 0, z: 0, saved: false }
+    };
+
+   
+    const preset_overlay = document.getElementById('preset-overlay');
+    let liveAxisQuotes = null;
+    let selectedPreset = null;
+
+
+    function flashLed(code) {
+        const led = document.getElementById('led-' + code);
+        led.classList.remove('on');
+        led.classList.add('noblink', 'blue');
+        setTimeout(() => {
+            led.classList.remove('noblink', 'blue'); 
+            led.classList.add('on');
+        }, 700);
+    }
+
+
+    function isPressedSaved(code) {
+        return presets[code].saved === true;
+    }
+
+    // Apri pagina presets 
+    function openPresetsWindow() {
+        document.getElementById('preset-page').classList.add('active'); 
+        preset_overlay.classList.add('open');
+
+        // Pulisci
+        document.getElementById('dro-x').textContent = (0).toFixed(precision['x']);
+        document.getElementById('dro-z').textContent = (0).toFixed(precision['z']);
+
+        // Mostra quota assi in movimento
+        liveAxisQuotes = setInterval(updatePresetUI, 80);
+    }
+
+
+    // Chiudi pagina
+    function closePresetsWindow() {
+        document.getElementById('preset-page').classList.remove('active'); 
+        preset_overlay.classList.remove('open');
+
+        clearInterval(liveAxisQuotes);
+
+        // Pulisci
+        document.getElementById('dro-x').textContent = (0).toFixed(precision['x']);
+        document.getElementById('dro-z').textContent = (0).toFixed(precision['z']);
+
+        liveAxisQuotes = null;
+        selectedPreset = null;
+    }
+
+
+    // Mostra preset selezionato
+    function showPreset(code) {
+        const offset = presets[code] || {x: 0, z: 0, saved: false};
+        
+        document.getElementById('dro-x').textContent = offset.x.toFixed(precision['x']);
+        document.getElementById('dro-z').textContent = offset.z.toFixed(precision['z']);
+    }
+
+
+    // Inserisci nello slot ma non salvare su localStorage qui
+    function applyPreset(code) {
+        selectedPreset = code;
+
+        // Slot occupato
+        if (isPressedSaved(code)) { 
+            showPreset(code); 
+            flashLed(code);
+            return 
+        };
+
+        const quota_X = parseFloat(document.getElementById('x').textContent);
+        const quota_Z = parseFloat(document.getElementById('z').textContent);
+
+        // Libero
+        presets[code] = {
+            x: quota_X, 
+            z: quota_Z, 
+            saved: true
+        };
+
+        // Accendi led per indicare preset salvato
+        const led = document.getElementById('led-' + code);
+        led.classList.remove('off');
+        led.classList.add('on');
+
+        showPreset(code);
+    }
+    
+
+    // Salva tutti presets su localStorage
+    function savePresets(code) {
+
+    }
+
+
+    // Libera slot
+    function zeroPreset() {
+        if (!selectedPreset) return;
+
+        presets[selectedPreset] = { 
+            x: 0, 
+            z: 0, 
+            saved: false 
+        };
+
+        // Slot libero spegni led
+        const led = document.getElementById('led-' + selectedPreset);
+        led.classList.remove('on');
+        led.classList.add('off');
+
+        // Aggiorna UI
+        showPreset(selectedPreset);
+        selectedPreset = null;
+    }
+
+    
+    // Aggiorna UI
+    function updatePresetUI() {
+        document.getElementById('raw-x').innerText = document.getElementById('x').innerText;
+        document.getElementById('raw-z').innerText = document.getElementById('z').innerText;
+    }
+
+
+    // All'avvio della pagina
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('open-presets').addEventListener('click', openPresetsWindow);
+        document.getElementById('save-preset').addEventListener('click', savePresets);
+        document.getElementById('zero-preset').addEventListener('click', zeroPreset);
+
+        // Pulsanti G54-G59
+        document.addEventListener('touchend', e => {
+            if (!e.target.matches('.preset-g54-g59')) return;
+
+            const code = e.target.dataset.preset;
+            if (code) {
+                e.target.classList.add('active');
+                applyPreset(code);
+            }
+        });
+    });
+    
+
+
+    // ******************************************************************************
+    //  Temi
+    // ******************************************************************************
+    function setTheme(theme) {
+        document.body.className = theme;
+        localStorage.setItem('theme', theme)
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const saved = localStorage.getItem('theme');
+        if (saved) document.body.className = saved;
+    });
+
+
+
+
+    // ******************************************************************************
+    //  Zoom slider
+    // ******************************************************************************
+    const slider = document.getElementById('zoom-slider');
+    const value = document.getElementById('zoom-value');
+    const scaler = document.getElementById('scaler');
+    const control = document.getElementById('zoom-control');
+
+
+    function applyZoom() {
+       const perc = slider.value;
+       const s = perc / 100;
+
+       scaler.style.transform = `scale(${s})`;
+       value.textContent = perc + '%';
+
+       localStorage.setItem('zoom', perc);
+    }
+
+   
+    slider.addEventListener('input', () => {
+        applyZoom();
+    });
+
+
+    /* Ho messo zoom-control con una altezza di 70px e transparente; Con il dito premuto fuori al lato destro 
+       dello slider mentre facciamo lo swipe verso sinistra NON TOCCANDO lo slider il drawer rimane aperto.
+    */
+    function blockDrawer() {
+        isDragging=false;   
+    }
+
+    control.addEventListener('touchstart', blockDrawer, { passive: true });
+    control.addEventListener('touchmove', blockDrawer, { passive: false });
+
+    /* Al caricamento della pagina */
+    document.addEventListener("DOMContentLoaded", () => {
+        const saved = localStorage.getItem('zoom') || 100;
+
+        slider.value = saved;
+        applyZoom();
+    });
+</script>
+</body>
+</html>
