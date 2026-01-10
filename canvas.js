@@ -1,4 +1,4 @@
-const MAX_VIEWPORT = 30;
+    const MAX_VIEWPORT = 30;
     let viewport = MAX_VIEWPORT; 
     let drawGrid = true; 
     let showCircle = true; 
