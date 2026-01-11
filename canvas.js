@@ -39,15 +39,14 @@
         const p1 = getCanvasCoords(touches[0].clientX, touches[0].clientY);
         const p2 = getCanvasCoords(touches[1].clientX, touches[1].clientY);
 
-        /* Matematicamente corretto
+        /* 
         return {
             dist: Math.hypot(p2.x - p1.x, p2.y - p1.y),
             cx: (p1.x + p2.x) / 2,
             cy: (p1.y + p2.y) / 2
         };
         */
-
-        // Sbagliato!? ma funziona meglio!
+        
         return {
             dist: Math.hypot(p2.x - p1.x, p2.y - p1.y),
             cx: (p1.x - p2.x) / 2,
@@ -100,7 +99,7 @@
     }
 
 
-    // Apri finestra dati
+    // Apre finestra dati
     function openCircleHolesWindow() {
         // Mostra overlay
         document.querySelector('.overlay').classList.add('open');
@@ -209,13 +208,12 @@
         let box = document.getElementById('error-box');
         let invalidList = listInvalidInputs();
 
-    
-        // Lista vuota nessun errore, altrimenti inputs con valori non consentiti
+
         if (invalidList.length === 0) {
             box.classList.add('hidden');
         } else {
             let msg = "🚫 This operation could not be completed. Please fix the errors below:<br><br>";
-            // Elenca errori inputs
+            // Elenca errori
             invalidList.forEach(name => {
                 msg += "○ " + name + "<br>";
            });
@@ -240,7 +238,7 @@
     }
 
 
-    /* Imposta riferimento dello zero del piano assi X e Z */
+    /* Imposta riferimento dello zero del piano asse X e Z */
     function setOriginXZ() {
         // Azzero assi
         axisX.setQuote(0);
@@ -393,9 +391,8 @@
     }
 
 
-    /* Zoom con due dita */
+    /* Zoom con dita */
     function fingertipZoom(canvas) {
-        // Zoom con dita
         canvas.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 const info = getPinchInfo(e.touches);
@@ -487,9 +484,6 @@
     }
 
 
-
-    
-    /* Versione con shrink del cerchio */
     function renderCircleHolesView() {
         const canvas = document.getElementById('circleHoleCanvas');
         if (!canvas) return;
@@ -701,7 +695,7 @@
         }
 
 
-        // Mostra etichetta per dimensione di 1 quadretto 
+        // Mostra etichetta dimensione di 1 quadretto 
         if (drawGrid) {
             const value = (gridMm / scaleFactor).toFixed(2);
             const text = value + " mm";
