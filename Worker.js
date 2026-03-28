@@ -127,7 +127,7 @@ self.onmessage = async (event) => {
    if (event.data === 'REQUEST_UPDATE' && running) {
         const framesCount = (renderWriteIndex - renderReadIndex + RENDER_BUFFER_SIZE) % RENDER_BUFFER_SIZE;
 
-        if (frames > 0) {
+        if (framesCount > 0) {
             const batch = new Int32Array(framesCount * 3);
 
             for (let i = 0; i < framesCount; i++) {
